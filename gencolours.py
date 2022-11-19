@@ -4,32 +4,39 @@ Generates a Dwarf Fortress (hereafter "DF") `colors.txt` file for each flavour
 of Catppuccin.
 """
 
+from enum import Enum, auto
 from pathlib import Path
 from typing import TextIO
 
 from catppuccin import Colour, Flavour
 
-LIGHTEN_PERCENT = 1.2
+# how much to darken/lighten colours
+COLOUR_MOD_PERCENT = 1.4
+
+
+class ColourOp(Enum):
+    LIGHTEN = auto()
+    DARKEN = auto()
+
 
 # map DF colour names to Catppuccin colour names.
-# prefix with light: to lighten the colour.
 scheme = {
-    "black": "base",
-    "blue": "blue",
-    "green": "green",
-    "cyan": "teal",
-    "red": "red",
-    "magenta": "mauve",
-    "brown": "rosewater",
-    "lgray": "overlay2",
-    "dgray": "surface2",
-    "lblue": "sky",
-    "lgreen": "light:green",
-    "lcyan": "light:teal",
-    "lred": "pink",
-    "lmagenta": "lavender",
-    "yellow": "yellow",
-    "white": "text",
+    "black": {"colour": "base"},
+    "blue": {"colour": "blue"},
+    "green": {"colour": "green"},
+    "cyan": {"colour": "teal"},
+    "red": {"colour": "red"},
+    "magenta": {"colour": "mauve"},
+    "brown": {"colour": "rosewater", "op": ColourOp.DARKEN},
+    "lgray": {"colour": "overlay2"},
+    "dgray": {"colour": "surface2"},
+    "lblue": {"colour": "sky"},
+    "lgreen": {"colour": "green", "op": ColourOp.LIGHTEN},
+    "lcyan": {"colour": "teal", "op": ColourOp.LIGHTEN},
+    "lred": {"colour": "pink"},
+    "lmagenta": {"colour": "lavender"},
+    "yellow": {"colour": "yellow"},
+    "white": {"colour": "text"},
 }
 
 
@@ -50,22 +57,28 @@ def redistribute_rgb(r, g, b):
 
 
 def lighten(colour: Colour) -> Colour:
-    r = colour.red * LIGHTEN_PERCENT
-    g = colour.green * LIGHTEN_PERCENT
-    b = colour.blue * LIGHTEN_PERCENT
+    r = colour.red * COLOUR_MOD_PERCENT
+    g = colour.green * COLOUR_MOD_PERCENT
+    b = colour.blue * COLOUR_MOD_PERCENT
+    return Colour(*redistribute_rgb(r, g, b))
+
+
+def darken(colour: Colour) -> Colour:
+    r = colour.red / COLOUR_MOD_PERCENT
+    g = colour.green / COLOUR_MOD_PERCENT
+    b = colour.blue / COLOUR_MOD_PERCENT
     return Colour(*redistribute_rgb(r, g, b))
 
 
 def write_colours(flavour: Flavour, *, fp: TextIO) -> None:
     for df, ctp in scheme.items():
-        light = False
-        if ctp.startswith("light:"):
-            ctp = ctp[len("light:") :]
-            light = True
+        colour = getattr(flavour, ctp["colour"])
 
-        colour = getattr(flavour, ctp)
-        if light:
-            colour = lighten(colour)
+        match ctp.get("op"):
+            case ColourOp.LIGHTEN:
+                colour = lighten(colour)
+            case ColourOp.DARKEN:
+                colour = darken(colour)
 
         df = df.upper()
         print(f"[{df}_R:{colour.red}]", file=fp)
