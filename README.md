@@ -36,10 +36,7 @@
 
 ## Usage
 
-1. Clone this repository locally
-2. Copy the desired flavour over your Dwarf Fortress' `colors.txt`
-	- For example: `cp mocha/colors.txt ~/.dwarffortress/data/init/colors.txt`
-3. Launch Dwarf Fortress
+Copy the desired flavor from [themes/](./themes/) into your `data/init/colors.txt` file.
 
 ## 💝 Thanks to
 
